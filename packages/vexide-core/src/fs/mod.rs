@@ -1,4 +1,5 @@
 use alloc::{string::String, vec::Vec};
+
 use no_std_io::io::{Error, ErrorKind, Read, Result, Write};
 use vex_sdk::{vexFileOpen, FRESULT};
 
@@ -14,19 +15,35 @@ fn fresult_to_io_error(fresult: FRESULT) -> Option<Error> {
         FRESULT::FR_NO_PATH => Some(Error::new(ErrorKind::NotFound, "no such path")),
         FRESULT::FR_INVALID_NAME => Some(Error::new(ErrorKind::InvalidInput, "invalid name")),
         FRESULT::FR_DENIED => Some(Error::new(ErrorKind::PermissionDenied, "accesss denied")),
-        FRESULT::FR_EXIST => Some(Error::new(ErrorKind::AlreadyExists, "file or directory already exists")),
+        FRESULT::FR_EXIST => Some(Error::new(
+            ErrorKind::AlreadyExists,
+            "file or directory already exists",
+        )),
         FRESULT::FR_INVALID_OBJECT => Some(Error::new(ErrorKind::InvalidData, "invalid object")),
-        FRESULT::FR_WRITE_PROTECTED => Some(Error::new(ErrorKind::PermissionDenied, "file or directory is write protected")),
-        FRESULT::FR_INVALID_DRIVE => Some(Error::new(ErrorKind::InvalidInput, "invalid drive number")),
+        FRESULT::FR_WRITE_PROTECTED => Some(Error::new(
+            ErrorKind::PermissionDenied,
+            "file or directory is write protected",
+        )),
+        FRESULT::FR_INVALID_DRIVE => {
+            Some(Error::new(ErrorKind::InvalidInput, "invalid drive number"))
+        }
         FRESULT::FR_NOT_ENABLED => Some(Error::new(ErrorKind::Other, "not enabled")),
         FRESULT::FR_NO_FILESYSTEM => Some(Error::new(ErrorKind::NotFound, "no filesystem")),
         FRESULT::FR_MKFS_ABORTED => Some(Error::new(ErrorKind::Other, "mkfs aborted")),
         FRESULT::FR_TIMEOUT => Some(Error::new(ErrorKind::TimedOut, "timeout")),
-        FRESULT::FR_LOCKED => Some(Error::new(ErrorKind::PermissionDenied, "file or directory is locked")),
+        FRESULT::FR_LOCKED => Some(Error::new(
+            ErrorKind::PermissionDenied,
+            "file or directory is locked",
+        )),
         // what is this?
         FRESULT::FR_NOT_ENOUGH_CORE => Some(Error::new(ErrorKind::Other, "not enough core")),
-        FRESULT::FR_TOO_MANY_OPEN_FILES => Some(Error::new(ErrorKind::Other, "too many open files. you may only have 8 open files at a given time")),
-        FRESULT::FR_INVALID_PARAMETER => Some(Error::new(ErrorKind::InvalidInput, "invalid parameter")),
+        FRESULT::FR_TOO_MANY_OPEN_FILES => Some(Error::new(
+            ErrorKind::Other,
+            "too many open files. you may only have 8 open files at a given time",
+        )),
+        FRESULT::FR_INVALID_PARAMETER => {
+            Some(Error::new(ErrorKind::InvalidInput, "invalid parameter"))
+        }
         _ => Some(Error::new(ErrorKind::Other, "unknown error")),
     }
 }
@@ -61,9 +78,7 @@ impl File {
     pub fn create<P: AsRef<Path>>(path: P) -> Result<File> {
         valide_fs()?;
 
-        let fd = unsafe {
-            vex_sdk::vexFileOpenWrite(path.as_ref().as_cstr().as_ptr())
-        };
+        let fd = unsafe { vex_sdk::vexFileOpenWrite(path.as_ref().as_cstr().as_ptr()) };
 
         if fd.is_null() {
             Err(Error::new(ErrorKind::NotFound, "file not found"))
@@ -90,9 +105,7 @@ impl Read for File {
         valide_fs()?;
 
         let buf_size = buf.len() as _;
-        let ret = unsafe {
-            vex_sdk::vexFileRead(buf.as_mut_ptr().cast(), 1, buf_size, self.inner)
-        };
+        let ret = unsafe { vex_sdk::vexFileRead(buf.as_mut_ptr().cast(), 1, buf_size, self.inner) };
 
         Ok(ret as usize)
     }
@@ -102,9 +115,7 @@ impl Read for &File {
         valide_fs()?;
 
         let buf_size = buf.len() as _;
-        let ret = unsafe {
-            vex_sdk::vexFileRead(buf.as_mut_ptr().cast(), 1, buf_size, self.inner)
-        };
+        let ret = unsafe { vex_sdk::vexFileRead(buf.as_mut_ptr().cast(), 1, buf_size, self.inner) };
 
         Ok(ret as usize)
     }
@@ -114,11 +125,21 @@ impl Write for File {
         valide_fs()?;
 
         let ret = unsafe {
-            vex_sdk::vexFileWrite(buf.as_ptr().cast_mut().cast(), 1, buf.len() as _, self.inner)
+            vex_sdk::vexFileWrite(
+                buf.as_ptr().cast_mut().cast(),
+                1,
+                buf.len() as _,
+                self.inner,
+            )
         };
 
         if ret == -1 {
             Err(Error::new(ErrorKind::Other, "write error"))
+        } else if ret == 0 {
+            Err(Error::new(
+                ErrorKind::WriteZero,
+                "could not write any bytes",
+            ))
         } else {
             Ok(ret as usize)
         }
@@ -134,7 +155,12 @@ impl Write for &File {
         valide_fs()?;
 
         let ret = unsafe {
-            vex_sdk::vexFileWrite(buf.as_ptr().cast_mut().cast(), 1, buf.len() as _, self.inner)
+            vex_sdk::vexFileWrite(
+                buf.as_ptr().cast_mut().cast(),
+                1,
+                buf.len() as _,
+                self.inner,
+            )
         };
 
         if ret == -1 {
