@@ -1,6 +1,6 @@
+use alloc::{boxed::Box, collections::TryReserveError, ffi::CString, vec, vec::Vec};
 use core::ffi::CStr;
 
-use alloc::{boxed::Box, collections::TryReserveError, ffi::CString, vec::Vec, vec};
 use no_std_io::io::Result;
 
 #[repr(transparent)]
@@ -34,7 +34,7 @@ impl AsRef<Path> for &Path {
 }
 
 pub struct PathBuf {
-    inner: Vec<u8>
+    inner: Vec<u8>,
 }
 impl PathBuf {
     pub fn new() -> Self {
@@ -42,7 +42,9 @@ impl PathBuf {
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        Self { inner: Vec::with_capacity(capacity) }
+        Self {
+            inner: Vec::with_capacity(capacity),
+        }
     }
 
     pub fn push<P: AsRef<Path>>(&mut self, path: P) {
@@ -73,7 +75,10 @@ impl PathBuf {
         self.inner.reserve_exact(additional);
     }
 
-    pub fn try_reserve_exact(&mut self, additional: usize) -> core::result::Result<(), TryReserveError> {
+    pub fn try_reserve_exact(
+        &mut self,
+        additional: usize,
+    ) -> core::result::Result<(), TryReserveError> {
         self.inner.try_reserve_exact(additional)
     }
 

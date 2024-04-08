@@ -18,8 +18,8 @@ extern crate alloc;
 pub mod allocator;
 #[cfg(feature = "critical-section")]
 pub mod critical_section;
+pub mod fs;
 pub mod io;
+pub mod path;
 pub mod sync;
 pub mod time;
-pub mod fs;
-pub mod path;
