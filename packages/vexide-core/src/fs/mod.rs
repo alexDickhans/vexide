@@ -8,41 +8,40 @@ use crate::path::{Path, PathBuf};
 fn fresult_to_io_error(fresult: FRESULT) -> Option<Error> {
     match fresult {
         FRESULT::FR_OK => None,
-        FRESULT::FR_DISK_ERR => Some(Error::new(ErrorKind::Other, "disk error")),
-        FRESULT::FR_INT_ERR => Some(Error::new(ErrorKind::Other, "internal error")),
-        FRESULT::FR_NOT_READY => Some(Error::new(ErrorKind::Other, "not ready")),
+        FRESULT::FR_DISK_ERR => Some(Error::new(ErrorKind::Other, "hard disk error")),
+        FRESULT::FR_INT_ERR => Some(Error::new(ErrorKind::Other, "internal assertion failed")),
+        FRESULT::FR_NOT_READY => Some(Error::new(ErrorKind::Other, "the drive is not ready to work")),
         FRESULT::FR_NO_FILE => Some(Error::new(ErrorKind::NotFound, "no such file")),
         FRESULT::FR_NO_PATH => Some(Error::new(ErrorKind::NotFound, "no such path")),
-        FRESULT::FR_INVALID_NAME => Some(Error::new(ErrorKind::InvalidInput, "invalid name")),
-        FRESULT::FR_DENIED => Some(Error::new(ErrorKind::PermissionDenied, "accesss denied")),
+        FRESULT::FR_INVALID_NAME => Some(Error::new(ErrorKind::InvalidInput, "invalid path name format")),
+        FRESULT::FR_DENIED => Some(Error::new(ErrorKind::PermissionDenied, "access denied or directory full")),
         FRESULT::FR_EXIST => Some(Error::new(
             ErrorKind::AlreadyExists,
-            "file or directory already exists",
+            "access denied",
         )),
-        FRESULT::FR_INVALID_OBJECT => Some(Error::new(ErrorKind::InvalidData, "invalid object")),
+        FRESULT::FR_INVALID_OBJECT => Some(Error::new(ErrorKind::InvalidData, "invalid file or directory object")),
         FRESULT::FR_WRITE_PROTECTED => Some(Error::new(
             ErrorKind::PermissionDenied,
-            "file or directory is write protected",
+            "the drive is write protected",
         )),
         FRESULT::FR_INVALID_DRIVE => {
             Some(Error::new(ErrorKind::InvalidInput, "invalid drive number"))
         }
-        FRESULT::FR_NOT_ENABLED => Some(Error::new(ErrorKind::Other, "not enabled")),
-        FRESULT::FR_NO_FILESYSTEM => Some(Error::new(ErrorKind::NotFound, "no filesystem")),
-        FRESULT::FR_MKFS_ABORTED => Some(Error::new(ErrorKind::Other, "mkfs aborted")),
-        FRESULT::FR_TIMEOUT => Some(Error::new(ErrorKind::TimedOut, "timeout")),
+        FRESULT::FR_NOT_ENABLED => Some(Error::new(ErrorKind::Other, "drive not enabled/has no work area")),
+        FRESULT::FR_NO_FILESYSTEM => Some(Error::new(ErrorKind::NotFound, "drive has no FAT filesystem")),
+        FRESULT::FR_MKFS_ABORTED => Some(Error::new(ErrorKind::Other, "internal function f_mkfs encountered an error")),
+        FRESULT::FR_TIMEOUT => Some(Error::new(ErrorKind::TimedOut, "could not give access to the filesystem in time")),
         FRESULT::FR_LOCKED => Some(Error::new(
             ErrorKind::PermissionDenied,
-            "file or directory is locked",
+            "operation violated the file sharing policy",
         )),
-        // what is this?
-        FRESULT::FR_NOT_ENOUGH_CORE => Some(Error::new(ErrorKind::Other, "not enough core")),
+        FRESULT::FR_NOT_ENOUGH_CORE => Some(Error::new(ErrorKind::Other, "LFN working buffer could not be allocated")),
         FRESULT::FR_TOO_MANY_OPEN_FILES => Some(Error::new(
             ErrorKind::Other,
             "too many open files. you may only have 8 open files at a given time",
         )),
         FRESULT::FR_INVALID_PARAMETER => {
-            Some(Error::new(ErrorKind::InvalidInput, "invalid parameter"))
+            Some(Error::new(ErrorKind::InvalidInput, "invalid parameter given"))
         }
         _ => Some(Error::new(ErrorKind::Other, "unknown error")),
     }
