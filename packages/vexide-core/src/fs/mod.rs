@@ -1,9 +1,14 @@
+pub mod str;
+
 use alloc::{string::String, vec::Vec};
 
 use no_std_io::io::{Error, ErrorKind, Read, Result, Write};
 use vex_sdk::{vexFileOpen, FRESULT};
 
-use crate::path::{Path, PathBuf};
+use crate::{
+    path::{Path, PathBuf},
+    println,
+};
 
 fn fresult_to_io_error(fresult: FRESULT) -> Option<Error> {
     match fresult {
@@ -86,10 +91,16 @@ pub struct File {
 impl File {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
         valide_fs()?;
-
         let fd = unsafe {
             // mode is ignored by the sdk
-            vexFileOpen(path.as_ref().as_cstr().as_ptr(), c"".as_ptr())
+            vexFileOpen(
+                path.as_ref()
+                    .as_fs_str()
+                    .to_nul_terminated_bytes()
+                    .as_ptr()
+                    .cast(),
+                c"".as_ptr(),
+            )
         };
 
         if fd.is_null() {
@@ -102,7 +113,15 @@ impl File {
     pub fn create<P: AsRef<Path>>(path: P) -> Result<File> {
         valide_fs()?;
 
-        let fd = unsafe { vex_sdk::vexFileOpenWrite(path.as_ref().as_cstr().as_ptr()) };
+        let fd = unsafe {
+            vex_sdk::vexFileOpenWrite(
+                path.as_ref()
+                    .as_fs_str()
+                    .to_nul_terminated_bytes()
+                    .as_ptr()
+                    .cast(),
+            )
+        };
 
         if fd.is_null() {
             Err(Error::new(ErrorKind::NotFound, "file not found"))

@@ -1,23 +1,22 @@
 use alloc::{boxed::Box, collections::TryReserveError, ffi::CString, vec, vec::Vec};
 use core::ffi::CStr;
+use crate::fs::str::FsStr;
 
-use no_std_io::io::Result;
 
 #[repr(transparent)]
 pub struct Path {
-    inner: CStr,
+    inner: FsStr,
 }
 impl Path {
-    pub fn new<P: AsRef<str>>(path: &P) -> &Self {
-        let cstr = unsafe { CStr::from_bytes_with_nul_unchecked(path.as_ref().as_bytes()) };
-        unsafe { &*(cstr as *const CStr as *const Self) }
+    pub fn new<P: AsRef<FsStr>>(path: &P) -> &Self {
+        unsafe { &*(path.as_ref() as *const FsStr as *const Self) }
     }
 
-    pub fn as_mut_cstr(&mut self) -> &mut CStr {
+    pub fn as_mut_fs_str(&mut self) -> &mut FsStr {
         &mut self.inner
     }
 
-    pub fn as_cstr(&self) -> &CStr {
+    pub fn as_fs_str(&self) -> &FsStr {
         &self.inner
     }
 }
@@ -48,7 +47,7 @@ impl PathBuf {
     }
 
     pub fn push<P: AsRef<Path>>(&mut self, path: P) {
-        let mut bytes = path.as_ref().as_cstr().to_bytes().to_vec();
+        let mut bytes = path.as_ref().as_fs_str().to_bytes().to_vec();
         self.inner.append(&mut bytes);
     }
 
