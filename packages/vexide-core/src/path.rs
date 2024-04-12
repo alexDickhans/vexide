@@ -1,9 +1,22 @@
-use alloc::{boxed::Box, collections::TryReserveError, ffi::CString, vec, vec::Vec};
-use core::ffi::CStr;
+use core::fmt::Debug;
+
+use alloc::{boxed::Box, collections::TryReserveError, ffi::CString, string::String, vec, vec::Vec};
+
 use crate::fs::str::FsStr;
 
+pub struct Components<'a> {
+    inner: Vec<&'a FsStr>,
+}
+impl<'a> Iterator for Components<'a> {
+    type Item = &'a FsStr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.pop()
+    }
+}
 
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct Path {
     inner: FsStr,
 }
@@ -18,6 +31,27 @@ impl Path {
 
     pub fn as_fs_str(&self) -> &FsStr {
         &self.inner
+    }
+
+    pub fn iter<'a>(&'a self) -> Components<'a> {
+        let components: Vec<_> = self.inner.to_str().split("/").map(|component| component.as_ref()).collect();
+        Components { inner: components }
+    }
+
+    pub fn file_name(&self) -> Option<&str> {
+        let Some(end) = self.iter().last() else {
+            return None;
+        };
+        let end = end.to_str();
+        let extension_len = end.chars().rev().take_while(|c| *c != '.').count() + 1;
+        let file_name = &end[..end.len() - extension_len];
+        Some(file_name)
+    }
+
+    pub fn into_path_buf(self: Box<Self>) -> PathBuf {
+        PathBuf {
+            inner: self.inner.to_bytes().to_vec(),
+        }
     }
 }
 
@@ -87,5 +121,10 @@ impl PathBuf {
 
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.inner.shrink_to(min_capacity);
+    }
+}
+impl Debug for PathBuf {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(&String::from_utf8_lossy(&self.inner))
     }
 }
