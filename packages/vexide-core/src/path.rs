@@ -38,14 +38,14 @@ impl Path {
         Components { inner: components }
     }
 
-    pub fn file_name(&self) -> Option<&str> {
+    pub fn file_name(&self) -> Option<&FsStr> {
         let Some(end) = self.iter().last() else {
             return None;
         };
         let end = end.to_str();
         let extension_len = end.chars().rev().take_while(|c| *c != '.').count() + 1;
         let file_name = &end[..end.len() - extension_len];
-        Some(file_name)
+        Some(file_name.as_ref())
     }
 
     pub fn into_path_buf(self: Box<Self>) -> PathBuf {
